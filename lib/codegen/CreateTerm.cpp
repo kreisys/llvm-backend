@@ -378,13 +378,13 @@ llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KOREComposite
   std::string name = strPattern->getContents();
   if (name == "BOOL.and" || name == "BOOL.andThen") {
     assert(pattern->getArguments().size() == 2);
-    llvm::Value *firstArg = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *firstArg = createAllocation(pattern->getArguments()[0].get()).first;
     llvm::BasicBlock *CondBlock = CurrentBlock;
     llvm::BasicBlock *TrueBlock = llvm::BasicBlock::Create(Ctx, "then", CurrentBlock->getParent());
     llvm::BasicBlock *MergeBlock = llvm::BasicBlock::Create(Ctx, "hook_BOOL_and", CurrentBlock->getParent());
     llvm::BranchInst::Create(TrueBlock, MergeBlock, firstArg, CurrentBlock);
     CurrentBlock = TrueBlock;
-    llvm::Value *secondArg = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *secondArg = createAllocation(pattern->getArguments()[1].get()).first;
     llvm::BranchInst::Create(MergeBlock, CurrentBlock);
     llvm::PHINode *Phi = llvm::PHINode::Create(llvm::Type::getInt1Ty(Ctx), 2, "phi", MergeBlock);
     Phi->addIncoming(secondArg, CurrentBlock);
@@ -393,13 +393,13 @@ llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KOREComposite
     return Phi;
   } else if (name == "BOOL.or" || name == "BOOL.orElse") {
     assert(pattern->getArguments().size() == 2);
-    llvm::Value *firstArg = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *firstArg = createAllocation(pattern->getArguments()[0].get()).first;
     llvm::BasicBlock *CondBlock = CurrentBlock;
     llvm::BasicBlock *FalseBlock = llvm::BasicBlock::Create(Ctx, "else", CurrentBlock->getParent());
     llvm::BasicBlock *MergeBlock = llvm::BasicBlock::Create(Ctx, "hook_BOOL_or", CurrentBlock->getParent());
     llvm::BranchInst::Create(MergeBlock, FalseBlock, firstArg, CurrentBlock);
     CurrentBlock = FalseBlock;
-    llvm::Value *secondArg = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *secondArg = createAllocation(pattern->getArguments()[1].get()).first;
     llvm::BranchInst::Create(MergeBlock, CurrentBlock);
     llvm::PHINode *Phi = llvm::PHINode::Create(llvm::Type::getInt1Ty(Ctx), 2, "phi", MergeBlock);
     Phi->addIncoming(secondArg, CurrentBlock);
@@ -408,18 +408,18 @@ llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KOREComposite
     return Phi;
   } else if (name == "BOOL.not") {
     assert(pattern->getArguments().size() == 1);
-    llvm::Value *arg = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *arg = createAllocation(pattern->getArguments()[0].get()).first;
     llvm::BinaryOperator *Not = llvm::BinaryOperator::Create(llvm::Instruction::Xor, arg, llvm::ConstantInt::get(llvm::Type::getInt1Ty(Ctx), 1), "hook_BOOL_not", CurrentBlock);
     return Not;
   } else if (name == "BOOL.implies") {
     assert(pattern->getArguments().size() == 2);
-    llvm::Value *firstArg = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *firstArg = createAllocation(pattern->getArguments()[0].get()).first;
     llvm::BasicBlock *CondBlock = CurrentBlock;
     llvm::BasicBlock *TrueBlock = llvm::BasicBlock::Create(Ctx, "then", CurrentBlock->getParent());
     llvm::BasicBlock *MergeBlock = llvm::BasicBlock::Create(Ctx, "hook_BOOL_implies", CurrentBlock->getParent());
     llvm::BranchInst::Create(TrueBlock, MergeBlock, firstArg, CurrentBlock);
     CurrentBlock = TrueBlock;
-    llvm::Value *secondArg = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *secondArg = createAllocation(pattern->getArguments()[1].get()).first;
     llvm::BranchInst::Create(MergeBlock, CurrentBlock);
     llvm::PHINode *Phi = llvm::PHINode::Create(llvm::Type::getInt1Ty(Ctx), 2, "phi", MergeBlock);
     Phi->addIncoming(secondArg, CurrentBlock);
@@ -428,28 +428,28 @@ llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KOREComposite
     return Phi;
   } else if (name == "BOOL.ne" || name == "BOOL.xor") {
     assert(pattern->getArguments().size() == 2);
-    llvm::Value *firstArg = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *secondArg = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *firstArg = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *secondArg = createAllocation(pattern->getArguments()[1].get()).first;
     llvm::BinaryOperator *Xor = llvm::BinaryOperator::Create(llvm::Instruction::Xor, firstArg, secondArg, "hook_BOOL_ne", CurrentBlock);
     return Xor;
   } else if (name == "BOOL.eq") {
     assert(pattern->getArguments().size() == 2);
-    llvm::Value *firstArg = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *secondArg = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *firstArg = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *secondArg = createAllocation(pattern->getArguments()[1].get()).first;
     llvm::ICmpInst *Eq = new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_EQ, firstArg, secondArg, "hook_BOOL_eq");
     return Eq;
   } else if (name == "KEQUAL.ite") {
     assert(pattern->getArguments().size() == 3);
-    llvm::Value *cond = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *cond = createAllocation(pattern->getArguments()[0].get()).first;
     llvm::BasicBlock *TrueBlock = llvm::BasicBlock::Create(Ctx, "then", CurrentBlock->getParent());
     llvm::BasicBlock *FalseBlock = llvm::BasicBlock::Create(Ctx, "else", CurrentBlock->getParent());
     llvm::BasicBlock *MergeBlock = llvm::BasicBlock::Create(Ctx, "hook_KEQUAL_ite", CurrentBlock->getParent());
     llvm::BranchInst::Create(TrueBlock, FalseBlock, cond, CurrentBlock);
     CurrentBlock = TrueBlock;
-    llvm::Value *trueArg = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *trueArg = createAllocation(pattern->getArguments()[1].get()).first;
     llvm::BasicBlock *NewTrueBlock = CurrentBlock;
     CurrentBlock = FalseBlock;
-    llvm::Value *falseArg = (*this)(pattern->getArguments()[2].get()).first;
+    llvm::Value *falseArg = createAllocation(pattern->getArguments()[2].get()).first;
     if (trueArg->getType()->isPointerTy() && !falseArg->getType()->isPointerTy()) {
       llvm::AllocaInst *AllocCollection = new llvm::AllocaInst(falseArg->getType(), 0, "", CurrentBlock);
       new llvm::StoreInst(falseArg, AllocCollection, CurrentBlock);
@@ -467,7 +467,7 @@ llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KOREComposite
     CurrentBlock = MergeBlock;
     return Phi;
   } else if (name == "MINT.uvalue") {
-    llvm::Value *mint = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *mint = createAllocation(pattern->getArguments()[0].get()).first;
     ValueType cat = dynamic_cast<KORECompositeSort *>(pattern->getConstructor()->getArguments()[0].get())->getCategory(Definition);
     auto Type = getValueType(cat, Module);
     size_t nwords = (cat.bits + 63) / 64;
@@ -497,7 +497,7 @@ llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KOREComposite
     setDebugLoc(result);
     return result;
   } else if (name == "MINT.svalue") {
-    llvm::Value *mint = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *mint = createAllocation(pattern->getArguments()[0].get()).first;
     ValueType cat = dynamic_cast<KORECompositeSort *>(pattern->getConstructor()->getArguments()[0].get())->getCategory(Definition);
     auto Type = getValueType(cat, Module);
     size_t nwords = (cat.bits + 63) / 64;
@@ -527,7 +527,7 @@ llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KOREComposite
     setDebugLoc(result);
     return result;
   } else if (name == "MINT.integer") {
-    llvm::Value *mpz = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *mpz = createAllocation(pattern->getArguments()[0].get()).first;
     ValueType cat = dynamic_cast<KORECompositeSort *>(pattern->getConstructor()->getSort().get())->getCategory(Definition);
     auto Type = getValueType(cat, Module);
     llvm::Instruction *Ptr = llvm::CallInst::Create(getOrInsertFunction(Module, "hook_MINT_export", llvm::Type::getInt64PtrTy(Ctx), getValueType({SortCategory::Int, 0}, Module), llvm::Type::getInt64Ty(Ctx)), {mpz, llvm::ConstantInt::get(llvm::Type::getInt64Ty(Ctx), cat.bits)}, "ptr", CurrentBlock);
@@ -554,102 +554,102 @@ llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KOREComposite
       return result;
     }
   } else if (name == "MINT.neg") {
-    llvm::Value *in = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *in = createAllocation(pattern->getArguments()[0].get()).first;
     return llvm::BinaryOperator::CreateNeg(in, "hook_MINT_neg", CurrentBlock);
   } else if (name == "MINT.not") {
-    llvm::Value *in = (*this)(pattern->getArguments()[0].get()).first;
+    llvm::Value *in = createAllocation(pattern->getArguments()[0].get()).first;
     return llvm::BinaryOperator::CreateNot(in, "hook_MINT_not", CurrentBlock);
   } else if (name == "MINT.eq") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_EQ, first, second, "hook_MINT_eq");
   } else if (name == "MINT.ne") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_NE, first, second, "hook_MINT_ne");
   } else if (name == "MINT.ult") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_ULT, first, second, "hook_MINT_ult");
   } else if (name == "MINT.ule") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_ULE, first, second, "hook_MINT_ule");
   } else if (name == "MINT.ugt") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_UGT, first, second, "hook_MINT_ugt");
   } else if (name == "MINT.uge") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_UGE, first, second, "hook_MINT_uge");
   } else if (name == "MINT.slt") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_SLT, first, second, "hook_MINT_slt");
   } else if (name == "MINT.sle") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_SLE, first, second, "hook_MINT_sle");
   } else if (name == "MINT.sgt") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_SGT, first, second, "hook_MINT_sgt");
   } else if (name == "MINT.sge") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return new llvm::ICmpInst(*CurrentBlock, llvm::CmpInst::ICMP_SGE, first, second, "hook_MINT_sge");
   } else if (name == "MINT.xor") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::Xor, first, second, "hook_MINT_xor", CurrentBlock);
   } else if (name == "MINT.or") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::Or, first, second, "hook_MINT_or", CurrentBlock);
   } else if (name == "MINT.and") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::And, first, second, "hook_MINT_and", CurrentBlock);
   } else if (name == "MINT.shl") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::Shl, first, second, "hook_MINT_shl", CurrentBlock);
   } else if (name == "MINT.lshr") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::LShr, first, second, "hook_MINT_lshr", CurrentBlock);
   } else if (name == "MINT.ashr") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::AShr, first, second, "hook_MINT_ashr", CurrentBlock);
   } else if (name == "MINT.add") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::Add, first, second, "hook_MINT_add", CurrentBlock);
   } else if (name == "MINT.sub") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::Sub, first, second, "hook_MINT_sub", CurrentBlock);
   } else if (name == "MINT.mul") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::Mul, first, second, "hook_MINT_mul", CurrentBlock);
   } else if (name == "MINT.sdiv") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::SDiv, first, second, "hook_MINT_sdiv", CurrentBlock);
   } else if (name == "MINT.udiv") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::UDiv, first, second, "hook_MINT_udiv", CurrentBlock);
   } else if (name == "MINT.srem") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::SRem, first, second, "hook_MINT_srem", CurrentBlock);
   } else if (name == "MINT.urem") {
-    llvm::Value *first = (*this)(pattern->getArguments()[0].get()).first;
-    llvm::Value *second = (*this)(pattern->getArguments()[1].get()).first;
+    llvm::Value *first = createAllocation(pattern->getArguments()[0].get()).first;
+    llvm::Value *second = createAllocation(pattern->getArguments()[1].get()).first;
     return llvm::BinaryOperator::Create(llvm::Instruction::URem, first, second, "hook_MINT_urem", CurrentBlock);
   } else if (!name.compare(0, 5, "MINT.")) {
     std::cerr << name << std::endl;
@@ -678,7 +678,7 @@ llvm::Value *CreateTerm::createFunctionCall(std::string name, KORECompositePatte
   int i = 0;
   for (auto sort : pattern->getConstructor()->getArguments()) {
     auto concreteSort = dynamic_cast<KORECompositeSort *>(sort.get());
-    llvm::Value *arg = (*this)(pattern->getArguments()[i++].get()).first;
+    llvm::Value *arg = createAllocation(pattern->getArguments()[i++].get()).first;
     switch(concreteSort->getCategory(Definition).cat) {
     case SortCategory::Map:
     case SortCategory::List:
@@ -767,7 +767,7 @@ llvm::Value *CreateTerm::notInjectionCase(KORECompositePattern *constructor, llv
     if (idx == 2 && val != nullptr) {
       ChildValue = val;
     } else {
-      ChildValue = (*this)(child.get()).first;
+      ChildValue = createAllocation(child.get()).first;
     }
     llvm::Value *ChildPtr = llvm::GetElementPtrInst::CreateInBounds(BlockType, Block, {llvm::ConstantInt::get(llvm::Type::getInt64Ty(Ctx), 0), llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), idx++)}, "", CurrentBlock);
     if (ChildValue->getType() == ChildPtr->getType()) {
@@ -788,6 +788,10 @@ llvm::Value *CreateTerm::notInjectionCase(KORECompositePattern *constructor, llv
 
 // returns a value and a boolean indicating whether that value could be an injection
 std::pair<llvm::Value *, bool> CreateTerm::operator()(KOREPattern *pattern) {
+  return createAllocation(pattern);
+}
+
+std::pair<llvm::Value *, bool> CreateTerm::createAllocation(KOREPattern *pattern) {
   if (auto variable = dynamic_cast<KOREVariablePattern *>(pattern)) {
     auto val = Substitution.lookup(variable->getName());
     if (!val) {
@@ -818,7 +822,7 @@ std::pair<llvm::Value *, bool> CreateTerm::operator()(KOREPattern *pattern) {
       return std::make_pair(Cast,false);
     } else if (symbolDecl->getAttributes().count("sortInjection")
         && dynamic_cast<KORECompositeSort *>(symbol->getArguments()[0].get())->getCategory(Definition).cat == SortCategory::Symbol) {
-      std::pair<llvm::Value *, bool> val = (*this)(constructor->getArguments()[0].get());
+      std::pair<llvm::Value *, bool> val = createAllocation(constructor->getArguments()[0].get());
       if (val.second) {
         llvm::Instruction *Tag = llvm::CallInst::Create(getOrInsertFunction(Module, "getTag", llvm::Type::getInt32Ty(Ctx), getValueType({SortCategory::Symbol, 0}, Module)), val.first, "tag", CurrentBlock);
         setDebugLoc(Tag);

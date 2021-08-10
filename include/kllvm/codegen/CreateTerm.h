@@ -22,6 +22,7 @@ private:
   llvm::Value *createHook(KORECompositePattern *hookAtt, KORECompositePattern *pattern);
   llvm::Value *createFunctionCall(std::string name, KORECompositePattern *pattern, bool sret, bool fastcc);
   llvm::Value *notInjectionCase(KORECompositePattern *constructor, llvm::Value *val);
+  std::pair<llvm::Value *, bool> createAllocation(KOREPattern *pattern);
 public:
   CreateTerm(
     llvm::StringMap<llvm::Value *> &Substitution,
