@@ -18,10 +18,12 @@ private:
   llvm::Module *Module;
   llvm::LLVMContext &Ctx;
   bool isAnywhereOwise;
+  std::set<KOREPattern *> staticTerms;
 
   llvm::Value *createHook(KORECompositePattern *hookAtt, KORECompositePattern *pattern);
   llvm::Value *createFunctionCall(std::string name, KORECompositePattern *pattern, bool sret, bool fastcc);
   llvm::Value *notInjectionCase(KORECompositePattern *constructor, llvm::Value *val);
+  bool populateStaticSet(KOREPattern *pattern);
   std::pair<llvm::Value *, bool> createAllocation(KOREPattern *pattern);
 public:
   CreateTerm(
@@ -35,7 +37,9 @@ public:
       CurrentBlock(EntryBlock),
       Module(Module),
       Ctx(Module->getContext()),
-      isAnywhereOwise(isAnywhereOwise) {}
+      isAnywhereOwise(isAnywhereOwise) {
+    staticTerms = std::set<KOREPattern *>();
+  }
 
 /* adds code to the specified basic block in the specified module which constructs
    an llvm value corresponding to the specified KORE RHS pattern and substitution in the
