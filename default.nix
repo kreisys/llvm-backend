@@ -1,10 +1,6 @@
-let
-  sources = import ./nix/sources.nix;
-  pinned = import sources."nixpkgs" { config = {}; overlays = []; };
-in
-
-{ pkgs ? pinned
-
+{ pkgs ? import sources."nixpkgs" { inherit system; config = {}; overlays = []; }
+, sources ? import ./nix/sources.nix
+, system ? builtins.currentSystem
 # Override `src` when this project is imported as a Git submodule:
 #
 # > ttuegel.cleanGitSubtree {
@@ -27,8 +23,8 @@ let
   ttuegel =
     let
       src = builtins.fetchGit {
-        url = "https://github.com/ttuegel/nix-lib";
-        rev = "66bb0ab890ff4d828a2dcfc7d5968465d0c7084f";
+        url = "https://github.com/kreisys/nix-lib";
+        rev = "e62c580ac0d2e8133bb2f3326c312ac86d348277";
         ref = "main";
       };
     in import src { inherit pkgs; };
