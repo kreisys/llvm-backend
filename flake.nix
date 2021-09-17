@@ -3,7 +3,10 @@
 
   inputs = {
     utils.url = "github:kreisys/flake-utils";
-    mavenix.url = "github:nix-community/mavenix/3ac30863abb9a8986560ed4dfa5e6288434b73e1";
+    mavenix = {
+      url = "github:nix-community/mavenix/3ac30863abb9a8986560ed4dfa5e6288434b73e1";
+      flake = false;
+    };
   };
 
   outputs = { self, nixpkgs, utils }: utils.lib.simpleFlake {
