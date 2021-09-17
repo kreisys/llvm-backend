@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "mavenix": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1591626256,
+        "narHash": "sha256-+eHvGiDGFlxVQOW+dhtT2tkL6dVFkJdGNm6b6iuuQtg=",
+        "owner": "nix-community",
+        "repo": "mavenix",
+        "rev": "3ac30863abb9a8986560ed4dfa5e6288434b73e1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "mavenix",
+        "rev": "3ac30863abb9a8986560ed4dfa5e6288434b73e1",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1628785280,
@@ -16,6 +33,7 @@
     },
     "root": {
       "inputs": {
+        "mavenix": "mavenix",
         "nixpkgs": "nixpkgs",
         "utils": "utils"
       }

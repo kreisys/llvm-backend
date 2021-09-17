@@ -9,7 +9,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, utils }: utils.lib.simpleFlake {
+  outputs = { self, nixpkgs, utils, mavenix }: utils.lib.simpleFlake {
     inherit nixpkgs;
     systems = [ "x86_64-darwin" "x86_64-linux" ];
 
