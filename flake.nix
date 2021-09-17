@@ -3,6 +3,7 @@
 
   inputs = {
     utils.url = "github:kreisys/flake-utils";
+    nixpkgs.url = "nixpkgs/a26e92a67d884db696792d25dcc44c466a1bc8b4";
     mavenix = {
       url = "github:nix-community/mavenix/3ac30863abb9a8986560ed4dfa5e6288434b73e1";
       flake = false;
